@@ -145,8 +145,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // CRA/Next on 3000, Vite on 5173.
+        // Deployed frontend, plus the local dev servers - CRA/Next on 3000, Vite on 5173.
+        // Local entries are kept on purpose so a laptop frontend can still hit this backend.
         configuration.setAllowedOrigins(List.of(
+                "https://e-jobs-frontend.onrender.com",
                 "http://localhost:3000",
                 "http://localhost:5173"
         ));
