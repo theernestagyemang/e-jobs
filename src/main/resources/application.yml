@@ -1,0 +1,88 @@
+server:
+  # Render injects PORT at runtime (10000 by default) and the container must bind to it.
+  # Unset locally, so dev falls back to 8080 - no prod-only override needed.
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: e-jobs-portal
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/ejobs}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASS:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  # Flyway owns the schema (src/main/resources/db/migration). Hibernate only checks that
+  # the entities still match it and will refuse to start if they have drifted.
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    # Left false on purpose: pointing this at a database Flyway has never seen would
+    # stamp it as already-migrated and silently skip V1.
+    baseline-on-migrate: false
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # Health only. Anything else here (env, beans, mappings) would be reachable
+        # by the same unauthenticated path Render polls.
+        include: health
+  endpoint:
+    health:
+      # NFR-SEC-02: {"status":"UP"} and nothing more - no DB host, disk or
+      # component detail leaked to an anonymous caller.
+      show-details: never
+
+jwt:
+  secret: ${JWT_SECRET:ZGV2LW9ubHktc2VjcmV0LWNoYW5nZS1tZS1pbi1wcm9kdWN0aW9uLTMyLWJ5dGVzLW1pbg==}
+  expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+
+admin:
+  # The initial administrator, created at startup only when no ADMIN account exists.
+  # The defaults below are published in this repository and are NOT secret - override
+  # both env vars in any environment that is reachable by anyone else.
+  bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:admin@ejobs.local}
+  bootstrap-password: ${ADMIN_BOOTSTRAP_PASSWORD:ChangeMe123!}
+
+audit:
+  # audit_logs is append-only and every login attempt adds a row. Entries older than
+  # this are swept nightly. Set to 0 or less to retain forever.
+  retention-days: ${AUDIT_RETENTION_DAYS:90}
+  retention-cron: ${AUDIT_RETENTION_CRON:0 30 3 * * *}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    # springdoc 3.1.0 defaults to OpenAPI 3.1 and logs a Jackson round-trip warning
+    # ("Cannot construct instance of HashSet ... from String value ('integer')") on
+    # every /v3/api-docs request. The emitted schemas are identical either way, and
+    # 3.0 is still what most client generators consume. Drop this line for 3.1.
+    version: openapi_3_0
+  swagger-ui:
+    path: /swagger-ui.html
+    # Keep the pasted token across page reloads - without this every refresh
+    # logs you back out of the Authorize dialog.
+    persist-authorization: true
+    display-request-duration: true
+    tags-sorter: alpha
+    operations-sorter: method
+    # Collapse the schema dump at the bottom of the page.
+    default-models-expand-depth: -1
+
+logging:
+  level:
+    org.springframework.security: INFO
+    com.ejobs.portal: DEBUG
+
+

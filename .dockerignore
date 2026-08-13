@@ -1,0 +1,25 @@
+# Build output - rebuilt inside the image
+target/
+
+# VCS and IDE
+.git/
+.gitignore
+.gitattributes
+.idea/
+*.iml
+
+# Secrets / local config
+.env*
+
+# API collections
+postman/
+
+# Stray frontend tooling
+node_modules/
+
+# Local Postgres data directories
+pgdata/
+postgres-data/
+postgres_data/
+db-data/
+data/postgres/
